@@ -8,9 +8,9 @@ articleDict = {}
 
 fromaddr = 'biteen3d@gmail.com'
 password = "28101998"
-toaddrs  = ['vinzdruesne@gmail.com']
+toaddrs  = ['vinzdruesne@gmail.com', 'vt.druesne@gmail.com']
 
-url = "https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_nblignes_est_200_puis_ordre_est_S_puis_sens_est_DESC_puis_f_est_p-13000_64300.html"
+url = "https://www.topachat.com/pages/produits_cat_est_micro_puis_rubrique_est_wgfx_pcie_puis_nblignes_est_200_puis_ordre_est_S_puis_sens_est_DESC_puis_f_est_58-10390,10709,10333,10278,11733,11575,11447,8743,10812,10851,8741,10586,10587,8742,11796.html"
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 def send_mail(msg):
@@ -40,15 +40,23 @@ print(articleDict)
 
 while True:
     time.sleep(15)
+    try:
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
+        for article in soup.find_all("article", class_="grille-produit NOR"):
+            name, id, status, price, link = parse_article(article)
 
-    for article in soup.find_all("article", class_="grille-produit NOR"):
-        name, id, status, price, link = parse_article(article)
+            if(id in articleDict):
+                if(articleDict[id]["status"] != status):
+                    send_mail("Subject: " + name + "\n\n" + status + " " + price[:-5] + "e " + link)
+                    articleDict[id]["status"] = status
+                    print(articleDict[id])
+            else:
+                send_mail("Subject: " + name + "\n\n" + status + " " + price[:-5] + "e " + link)
+                articleDict[id] = {"name" : name, "status" : status, "price" : price, "link" : link}
 
-        if(articleDict[id]["status"] != status):
-            send_mail(name + " " + status + " " + price[:-5] + " " + link)
-            articleDict[id]["status"] = status
-        else:
-            print(name + " : no change.")
+    except Exception as e:
+        send_mail("Subject: Error" + "\n\n" + str(e))
+        print(e)
+        continue
